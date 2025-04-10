@@ -22,7 +22,7 @@
  * @license    MIT License
  * @link       https://github.com/logiscape/mcp-sdk-php
  *
- * Filename: Types/TextContent.php
+ * Filename: Types/AudioContent.php
  */
 
 declare(strict_types=1);
@@ -30,19 +30,21 @@ declare(strict_types=1);
 namespace Mcp\Types;
 
 /**
- * Text content for messages
+ * Audio content for messages
  */
-class TextContent extends Content {
+class AudioContent extends Content {
     public function __construct(
-        public readonly string $text,
+        public readonly string $data,
+        public readonly string $mimeType,
         ?Annotations $annotations = null,
     ) {
-        parent::__construct('text', $annotations);
+        parent::__construct('audio', $annotations);
     }
 
     public static function fromArray(array $data): self {
-        $text = $data['text'] ?? '';
-        unset($data['text']);
+        $audioData = $data['data'] ?? '';
+        $mimeType = $data['mimeType'] ?? '';
+        unset($data['data'], $data['mimeType']);
 
         $annotations = null;
         if (isset($data['annotations']) && is_array($data['annotations'])) {
@@ -50,21 +52,18 @@ class TextContent extends Content {
             unset($data['annotations']);
         }
 
-        $obj = new self($text, $annotations);
-
-        // If Content or TextContent uses ExtraFieldsTrait, handle extra fields similarly.
-        // TextContent extends Content, which may not have ExtraFieldsTrait, but from the pattern, Content probably doesn't.
-        // If needed, add ExtraFieldsTrait to Content and merge extra fields here. 
-        // For now, TextContent doesn't use ExtraFieldsTrait directly. Let's assume no extra fields at this level.
-        // If you want to support unknown fields, you'd need ExtraFieldsTrait on Content as well.
+        $obj = new self($audioData, $mimeType, $annotations);
 
         $obj->validate();
         return $obj;
     }
 
     public function validate(): void {
-        if (is_null($this->text)) {
-            throw new \InvalidArgumentException('Text content cannot be null');
+        if (empty($this->data)) {
+            throw new \InvalidArgumentException('Audio data cannot be empty');
+        }
+        if (empty($this->mimeType)) {
+            throw new \InvalidArgumentException('Audio mimeType cannot be empty');
         }
         if ($this->annotations !== null) {
             $this->annotations->validate();
@@ -73,7 +72,8 @@ class TextContent extends Content {
 
     public function jsonSerialize(): mixed {
         $data = parent::jsonSerialize();
-        $data['text'] = $this->text;
+        $data['data'] = $this->data;
+        $data['mimeType'] = $this->mimeType;
         return $data;
     }
 }
